@@ -30,15 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getFiltros = () => {
         const params = new URLSearchParams();
-        if (filtroTermo.value) {
-            params.append('termo', filtroTermo.value);
-        }
-        if (filtroDataInicio.value) {
-            params.append('data_inicio', filtroDataInicio.value);
-        }
-        if (filtroDataFim.value) {
-            params.append('data_fim', filtroDataFim.value);
-        }
+        if (filtroTermo.value) { params.append('termo', filtroTermo.value); }
+        if (filtroDataInicio.value) { params.append('data_inicio', filtroDataInicio.value); }
+        if (filtroDataFim.value) { params.append('data_fim', filtroDataFim.value); }
         return params;
     };
 
@@ -47,6 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = `/api/manutencoes?${params.toString()}`;
         try {
             const response = await fetch(url);
+            if (response.redirected) { window.location.href = response.url; return; }
             if (!response.ok) throw new Error(`Erro HTTP: ${response.status}`);
             const manutencoes = await response.json();
             tabelaCorpo.innerHTML = '';
@@ -56,26 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             manutencoes.forEach(m => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${m.serie_empacotadeira}</td>
-                    <td>${m.data}</td>
-                    <td>${m.num_equipamento || '-'}</td>
-                    <td>${m.descricao}</td>
-                    <td>${m.solicitante}</td>
-                    <td>${m.responsavel}</td>
-                    <td>${m.valor.replace('.', ',')}</td>
-                    <td>
-                        <div class="acoes-grid">
-                            <button class="btn-editar btn-acao" data-id="${m.id}" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                            <button class="btn-excluir btn-acao secondary" data-id="${m.id}" title="Excluir"><i class="fas fa-trash-alt"></i></button>
-                        </div>
-                    </td>
-                `;
+                tr.innerHTML = `<td>${m.serie_empacotadeira}</td><td>${m.data}</td><td>${m.num_equipamento || '-'}</td><td>${m.descricao}</td><td>${m.solicitante}</td><td>${m.responsavel}</td><td>${m.valor.replace('.', ',')}</td><td><div class="acoes-grid"><button class="btn-editar btn-acao" data-id="${m.id}" title="Editar"><i class="fas fa-pencil-alt"></i></button><button class="btn-excluir btn-acao secondary" data-id="${m.id}" title="Excluir"><i class="fas fa-trash-alt"></i></button></div></td>`;
                 tabelaCorpo.appendChild(tr);
             });
         } catch (error) {
             console.error("Falha ao carregar manutenções:", error);
-            tabelaCorpo.innerHTML = '<tr><td colspan="8" style="text-align: center;">Erro ao carregar os dados.</td></tr>';
+            tabelaCorpo.innerHTML = '<tr><td colspan="8" style="text-align: center;">Erro ao carregar os dados. Verifique a conexão ou sua sessão.</td></tr>';
         }
     };
 
@@ -89,27 +70,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const url = isEditMode ? `/api/manutencao/${id}` : '/api/manutencoes';
         const method = isEditMode ? 'PUT' : 'POST';
         try {
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dados)
-            });
-            if (!response.ok) {
-                const erro = await response.json();
-                throw new Error(erro.erro || `Erro HTTP: ${response.status}`);
+            const response = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const resultado = await response.json();
+                if (!response.ok) { throw new Error(resultado.erro || `Erro HTTP: ${response.status}`); }
+                sairModoEdicao();
+                carregarManutencoes();
+            } else {
+                throw new Error('A sua sessão expirou. A página será recarregada.');
             }
-            sairModoEdicao();
-            carregarManutencoes();
         } catch (error) {
             console.error("Falha ao salvar:", error);
             alert(`Não foi possível salvar: ${error.message}`);
+            if (error.message.includes('sessão expirou')) {
+                window.location.reload();
+            }
         }
     });
 
     tabelaCorpo.addEventListener('click', async (event) => {
-        const target = event.target.closest('.btn-acao'); // Pega o botão mesmo que clique no ícone
+        const target = event.target.closest('.btn-acao');
         if (!target) return;
-
         const id = target.dataset.id;
         if (target.classList.contains('btn-excluir')) {
             if (confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
@@ -164,14 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
         submitButton.disabled = true;
         submitButton.innerText = 'Importando...';
         try {
-            const response = await fetch('/api/importar', {
-                method: 'POST',
-                body: formData,
-            });
+            const response = await fetch('/api/importar', { method: 'POST', body: formData });
             const resultado = await response.json();
-            if (!response.ok) {
-                throw new Error(resultado.erro || 'Ocorreu um erro desconhecido.');
-            }
+            if (!response.ok) { throw new Error(resultado.erro || 'Ocorreu um erro desconhecido.'); }
             alert(resultado.mensagem);
             carregarManutencoes();
         } catch (error) {

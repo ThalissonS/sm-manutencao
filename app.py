@@ -12,6 +12,7 @@ import pandas as pd
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave-padrao-para-teste-local-insegura')
 app.permanent_session_lifetime = timedelta(days=7)
+
 instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
 os.makedirs(instance_path, exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "manutencoes.db")}'
@@ -81,6 +82,7 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
+
 # --- Rotas da Aplicação ---
 @app.route('/')
 @requires_auth
@@ -99,9 +101,9 @@ def handle_manutencoes():
             termo_like = f"%{termo_busca}%"
             query = query.where(or_(Manutencao.serie_empacotadeira.ilike(termo_like), Manutencao.num_equipamento.ilike(termo_like), Manutencao.descricao.ilike(termo_like), Manutencao.solicitante.ilike(termo_like), Manutencao.responsavel.ilike(termo_like)))
         if data_inicio:
-            query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%d-%m-%Y').date())
+            query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
         if data_fim:
-            query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%d-%m-%Y').date())
+            query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
         query = query.order_by(Manutencao.data.desc())
         manutencoes = db.session.execute(query).scalars().all()
         return jsonify([m.to_dict() for m in manutencoes])
@@ -109,34 +111,28 @@ def handle_manutencoes():
         dados = request.get_json()
         if not dados or not all(k in dados for k in ['serie_empacotadeira', 'data', 'descricao', 'solicitante', 'responsavel', 'valor']):
             return jsonify({'erro': 'Dados incompletos ou formato inválido'}), 400
-        nova_manutencao = Manutencao(serie_empacotadeira=dados['serie_empacotadeira'], data=datetime.strptime(dados['data'], '%d-%m-%Y').date(), num_equipamento=dados.get('num_equipamento'), descricao=dados['descricao'], solicitante=dados['solicitante'], responsavel=dados['responsavel'], valor=float(dados['valor']))
+        nova_manutencao = Manutencao(serie_empacotadeira=dados['serie_empacotadeira'], data=datetime.strptime(dados['data'], '%Y-%m-%d').date(), num_equipamento=dados.get('num_equipamento'), descricao=dados['descricao'], solicitante=dados['solicitante'], responsavel=dados['responsavel'], valor=float(dados['valor']))
         db.session.add(nova_manutencao)
         db.session.commit()
         return jsonify(nova_manutencao.to_dict()), 201
     return jsonify({'erro': 'Método não permitido'}), 405
 
-# =======================================================
-# FUNÇÃO CORRIGIDA
-# =======================================================
 @app.route('/api/manutencao/<int:id>', methods=['GET', 'PUT', 'DELETE'])
 @requires_auth
 def handle_manutencao(id):
     manutencao = db.session.get(Manutencao, id)
     if not manutencao:
         return jsonify({'erro': 'Registro não encontrado'}), 404
-
-    # MUDANÇA: Usamos if/elif para garantir que um dos blocos seja executado
     if request.method == 'DELETE':
         db.session.delete(manutencao)
         db.session.commit()
         return jsonify({'mensagem': 'Registro excluído com sucesso!'})
-
     elif request.method == 'PUT':
         dados = request.get_json()
         if not dados:
             return jsonify({'erro': 'Dados inválidos'}), 400
         manutencao.serie_empacotadeira = dados.get('serie_empacotadeira', manutencao.serie_empacotadeira)
-        manutencao.data = datetime.strptime(dados.get('data'), '%d-%m-%Y').date() if dados.get('data') else manutencao.data
+        manutencao.data = datetime.strptime(dados.get('data'), '%Y-%m-%d').date() if dados.get('data') else manutencao.data
         manutencao.num_equipamento = dados.get('num_equipamento', manutencao.num_equipamento)
         manutencao.descricao = dados.get('descricao', manutencao.descricao)
         manutencao.solicitante = dados.get('solicitante', manutencao.solicitante)
@@ -144,13 +140,10 @@ def handle_manutencao(id):
         manutencao.valor = float(dados.get('valor', manutencao.valor))
         db.session.commit()
         return jsonify(manutencao.to_dict())
-
     elif request.method == 'GET':
         dados_retorno = manutencao.to_dict()
         dados_retorno['data_iso'] = manutencao.data.isoformat()
         return jsonify(dados_retorno)
-    
-    # Este retorno de segurança nem seria necessário com a lógica if/elif, mas é uma boa prática
     return jsonify({'erro': 'Método não suportado'}), 405
 
 @app.route('/api/exportar', methods=['GET'])
@@ -164,9 +157,9 @@ def exportar_excel():
         termo_like = f"%{termo_busca}%"
         query = query.where(or_(Manutencao.serie_empacotadeira.ilike(termo_like), Manutencao.num_equipamento.ilike(termo_like), Manutencao.descricao.ilike(termo_like), Manutencao.solicitante.ilike(termo_like), Manutencao.responsavel.ilike(termo_like)))
     if data_inicio:
-        query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%d-%m-%Y').date())
+        query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
     if data_fim:
-        query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%d-%m-%Y').date())
+        query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
     query = query.order_by(Manutencao.data.asc())
     manutencoes = db.session.execute(query).scalars().all()
     if not manutencoes:
