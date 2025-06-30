@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Manutenções</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
+    
+    <style>
+        .filtro-datas {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        .filtro-datas label {
+            margin-bottom: 0;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 2rem 0;
+            opacity: 0.8;
+        }
+        .icon-linkedin {
+            width: 1.25rem;
+            height: 1.25rem;
+            fill: currentColor;
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        svg.icon-linkedin { 
+            width: 1.25rem !important; 
+            height: 1.25rem !important; 
+        }
+        
+        .icon-linkedin:hover {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <header>
+            <h1>Controle de Manutenção de Empacotadeiras</h1>
+            <p>Registre e consulte as manutenções realizadas de forma simples e rápida.</p>
+        </header>
+
+        <article>
+            <h2 id="form-title">Registrar Nova Manutenção</h2>
+            <form id="form-manutencao">
+                <div class="grid">
+                    <div>
+                        <label for="serie_empacotadeira">
+                            Série da Empacotadeira
+                            <select id="serie_empacotadeira" name="serie_empacotadeira" required>
+                                <option value="" disabled selected>Selecione a máquina</option>
+                                <option value="EMP-001">EMP-001</option>
+                                <option value="EMP-002">EMP-002</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div>
+                        <label for="data">
+                            Data do Serviço
+                            <input type="date" id="data" name="data" required>
+                        </label>
+                    </div>
+                </div>
+
+                <label for="num_equipamento">N° do Equipamento (opcional)</label>
+                <input type="text" id="num_equipamento" name="num_equipamento" placeholder="Ex: MOTOR-A, SENSOR-B">
+
+                <label for="descricao">Descrição do Serviço Realizado</label>
+                <textarea id="descricao" name="descricao" required placeholder="Detalhe o que foi feito..."></textarea>
+                
+                <div class="grid">
+                    <div>
+                        <label for="solicitante">Solicitante</label>
+                        <input type="text" id="solicitante" name="solicitante" required placeholder="Nome ou empresa">
+                    </div>
+                    <div>
+                        <label for="responsavel">Responsável pelo Serviço</label>
+                        <input type="text" id="responsavel" name="responsavel" required placeholder="Nome do técnico">
+                    </div>
+                </div>
+
+                <label for="valor">Valor (R$)</label>
+                <input type="number" id="valor" name="valor" step="0.01" required placeholder="Ex: 150.50">
+
+                <button type="submit">Salvar Manutenção</button>
+            </form>
+        </article>
+
+        <article>
+            <h2>Importar de Excel</h2>
+            <p>
+                Para importar múltiplos registros de uma vez, baixe a planilha modelo, 
+                preencha com os dados e envie o arquivo abaixo.
+            </p>
+            <a href="/api/template/download" role="button" class="outline">Baixar modelo de planilha</a>
+            <form id="form-importar" style="margin-top: 1rem;">
+                <label for="arquivo-excel">
+                    Selecione o arquivo Excel (.xlsx ou .xls)
+                    <input type="file" id="arquivo-excel" name="arquivo" accept=".xlsx, .xls" required>
+                </label>
+                <button type="submit">Importar Arquivo</button>
+            </form>
+        </article>
+
+        <article>
+            <h2>Histórico de Registros</h2>
+            <div id="filtros-acoes">
+                <div class="grid">
+                    <div>
+                        <label for="filtro-termo">Buscar por termo</label>
+                        <input type="search" id="filtro-termo" name="termo" placeholder="Buscar por termo ou responsável...">
+                    </div>
+                    <div class="filtro-datas">
+                        <label for="filtro-data-inicio">
+                            De
+                            <input type="date" id="filtro-data-inicio" name="data_inicio">
+                        </label>
+                        <label for="filtro-data-fim">
+                            Até
+                            <input type="date" id="filtro-data-fim" name="data_fim">
+                        </label>
+                    </div>
+                </div>
+                <div class="grid">
+                    <button id="btn-filtrar">Aplicar Filtros</button>
+                    <button id="btn-exportar" class="secondary">Exportar para Excel</button>
+                </div>
+            </div>
+            
+            <div class="overflow-auto">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Máquina</th>
+                            <th>Data</th>
+                            <th>N° Equip.</th>
+                            <th>Descrição</th>
+                            <th>Solicitante</th>
+                            <th>Responsável</th>
+                            <th>Valor (R$)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabela-corpo">
+                        </tbody>
+                </table>
+            </div>
+        </article>
+        
+        <footer class="container">
+            <div class="footer-content">
+                <small>Desenvolvido por Thalisson</small>
+                <a href="https://linkedin.com/in/thalissonpereira2003" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de Thalisson Pereira" title="Conecte-se no LinkedIn">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon-linkedin">
+                        <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.25 6.5 1.75 1.75 0 016.5 8.25zM19 19h-3v-4.75c0-1.4-1.2-2.5-2.5-2.5S11 12.85 11 14.25V19h-3v-9h2.9v1.3a3.11 3.11 0 012.6-1.5c2.5 0 4.5 2.2 4.5 5v4.2z"></path>
+                    </svg>
+                </a>
+            </div>
+        </footer>
+    </main>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
