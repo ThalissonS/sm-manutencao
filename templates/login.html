@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Controle de Manutenções</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--pico-secondary-background);
+        }
+        main {
+            max-width: 420px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <article>
+            <hgroup>
+                <h1>Acesso ao Sistema</h1>
+                <h2>Controle de Manutenção de Empacotadeiras</h2>
+            </hgroup>
+
+            {% if erro %}
+                <p><mark>{{ erro }}</mark></p>
+            {% endif %}
+            
+            <form method="POST" action="{{ url_for('login') }}">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" placeholder="Usuário" required>
+
+                <label for="password">Senha</label>
+                <input type="password" id="password" name="password" placeholder="Senha" required>
+                
+                <button type="submit" class="primary">Entrar</button>
+            </form>
+        </article>
+    </main>
+</body>
+</html>

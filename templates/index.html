@@ -7,44 +7,21 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
     
     <style>
-        .filtro-datas {
-            display: flex;
-            align-items: flex-end;
-            gap: 0.5rem;
-        }
-        .filtro-datas label {
-            margin-bottom: 0;
-        }
-        
-        .footer-content {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 2rem 0;
-            opacity: 0.8;
-        }
-        .icon-linkedin {
-            width: 1.25rem;
-            height: 1.25rem;
-            fill: currentColor;
-            transition: opacity 0.2s ease-in-out;
-        }
-        
-        svg.icon-linkedin { 
-            width: 1.25rem !important; 
-            height: 1.25rem !important; 
-        }
-        
-        .icon-linkedin:hover {
-            opacity: 0.7;
-        }
+        .filtro-datas { display: flex; align-items: flex-end; gap: 0.5rem; }
+        .filtro-datas label { margin-bottom: 0; }
+        .footer-content { display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 2rem 0; opacity: 0.8; }
+        .icon-linkedin { width: 1.25rem; height: 1.25rem; fill: currentColor; transition: opacity 0.2s ease-in-out; }
+        svg.icon-linkedin { width: 1.25rem !important; height: 1.25rem !important; }
+        .icon-linkedin:hover { opacity: 0.7; }
     </style>
 </head>
 <body>
     <main class="container">
         <header>
-            <h1>Controle de Manutenção de Empacotadeiras</h1>
+            <div class="grid">
+                <div><h1>Controle de Manutenção de Empacotadeiras</h1></div>
+                <div style="text-align: right;"><a href="{{ url_for('logout') }}" role="button" class="contrast outline">Sair</a></div>
+            </div>
             <p>Registre e consulte as manutenções realizadas de forma simples e rápida.</p>
         </header>
 
@@ -53,29 +30,22 @@
             <form id="form-manutencao">
                 <div class="grid">
                     <div>
-                        <label for="serie_empacotadeira">
-                            Série da Empacotadeira
-                            <select id="serie_empacotadeira" name="serie_empacotadeira" required>
-                                <option value="" disabled selected>Selecione a máquina</option>
-                                <option value="EMP-001">EMP-001</option>
-                                <option value="EMP-002">EMP-002</option>
-                            </select>
-                        </label>
+                        <label for="serie_empacotadeira">Série da Empacotadeira</label>
+                        <select id="serie_empacotadeira" name="serie_empacotadeira" required>
+                            <option value="" disabled selected>Selecione a máquina</option>
+                            <option value="EMP-001">EMP-001</option>
+                            <option value="EMP-002">EMP-002</option>
+                        </select>
                     </div>
                     <div>
-                        <label for="data">
-                            Data do Serviço
-                            <input type="date" id="data" name="data" required>
-                        </label>
+                        <label for="data">Data do Serviço</label>
+                        <input type="date" id="data" name="data" required>
                     </div>
                 </div>
-
                 <label for="num_equipamento">N° do Equipamento (opcional)</label>
                 <input type="text" id="num_equipamento" name="num_equipamento" placeholder="Ex: MOTOR-A, SENSOR-B">
-
                 <label for="descricao">Descrição do Serviço Realizado</label>
                 <textarea id="descricao" name="descricao" required placeholder="Detalhe o que foi feito..."></textarea>
-                
                 <div class="grid">
                     <div>
                         <label for="solicitante">Solicitante</label>
@@ -86,26 +56,19 @@
                         <input type="text" id="responsavel" name="responsavel" required placeholder="Nome do técnico">
                     </div>
                 </div>
-
                 <label for="valor">Valor (R$)</label>
                 <input type="number" id="valor" name="valor" step="0.01" required placeholder="Ex: 150.50">
-
                 <button type="submit">Salvar Manutenção</button>
             </form>
         </article>
 
         <article>
             <h2>Importar de Excel</h2>
-            <p>
-                Para importar múltiplos registros de uma vez, baixe a planilha modelo, 
-                preencha com os dados e envie o arquivo abaixo.
-            </p>
+            <p>Para importar múltiplos registros de uma vez, baixe a planilha modelo, preencha com os dados e envie o arquivo abaixo.</p>
             <a href="/api/template/download" role="button" class="outline">Baixar modelo de planilha</a>
             <form id="form-importar" style="margin-top: 1rem;">
-                <label for="arquivo-excel">
-                    Selecione o arquivo Excel (.xlsx ou .xls)
-                    <input type="file" id="arquivo-excel" name="arquivo" accept=".xlsx, .xls" required>
-                </label>
+                <label for="arquivo-excel">Selecione o arquivo Excel (.xlsx ou .xls)</label>
+                <input type="file" id="arquivo-excel" name="arquivo" accept=".xlsx, .xls" required>
                 <button type="submit">Importar Arquivo</button>
             </form>
         </article>
@@ -119,14 +82,10 @@
                         <input type="search" id="filtro-termo" name="termo" placeholder="Buscar por termo ou responsável...">
                     </div>
                     <div class="filtro-datas">
-                        <label for="filtro-data-inicio">
-                            De
-                            <input type="date" id="filtro-data-inicio" name="data_inicio">
-                        </label>
-                        <label for="filtro-data-fim">
-                            Até
-                            <input type="date" id="filtro-data-fim" name="data_fim">
-                        </label>
+                        <label for="filtro-data-inicio">De</label>
+                        <input type="date" id="filtro-data-inicio" name="data_inicio">
+                        <label for="filtro-data-fim">Até</label>
+                        <input type="date" id="filtro-data-fim" name="data_fim">
                     </div>
                 </div>
                 <div class="grid">
