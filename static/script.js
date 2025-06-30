@@ -65,9 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${m.responsavel}</td>
                     <td>${m.valor.replace('.', ',')}</td>
                     <td>
-                        <div class="grid">
-                            <button class="btn-editar" data-id="${m.id}">Editar</button>
-                            <button class="btn-excluir secondary" data-id="${m.id}">Excluir</button>
+                        <div class="acoes-grid">
+                            <button class="btn-editar btn-acao" data-id="${m.id}" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                            <button class="btn-excluir btn-acao secondary" data-id="${m.id}" title="Excluir"><i class="fas fa-trash-alt"></i></button>
                         </div>
                     </td>
                 `;
@@ -107,9 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     tabelaCorpo.addEventListener('click', async (event) => {
-        const target = event.target;
+        const target = event.target.closest('.btn-acao'); // Pega o botão mesmo que clique no ícone
+        if (!target) return;
+
+        const id = target.dataset.id;
         if (target.classList.contains('btn-excluir')) {
-            const id = target.dataset.id;
             if (confirm('Tem certeza que deseja excluir este registro? Esta ação não pode ser desfeita.')) {
                 try {
                     const response = await fetch(`/api/manutencao/${id}`, { method: 'DELETE' });
@@ -121,7 +123,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         if (target.classList.contains('btn-editar')) {
-            const id = target.dataset.id;
             try {
                 const response = await fetch(`/api/manutencao/${id}`);
                 if (!response.ok) throw new Error('Não foi possível carregar os dados para edição.');

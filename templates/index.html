@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Manutenções</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
     <style>
         .filtro-datas {
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
-        
         .footer-content {
             display: flex;
             justify-content: center;
@@ -27,14 +27,31 @@
             fill: currentColor;
             transition: opacity 0.2s ease-in-out;
         }
-        
         svg.icon-linkedin { 
             width: 1.25rem !important; 
             height: 1.25rem !important; 
         }
-        
         .icon-linkedin:hover {
             opacity: 0.7;
+        }
+        /* NOVO: Estilos para os botões de ação na tabela */
+        .acoes-grid {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        .btn-acao {
+            padding: 0.25rem;
+            width: 2.25rem; /* Força os botões a terem a mesma largura */
+            font-size: 0.8rem;
+            line-height: 1;
+            margin: 0;
+        }
+        /* Cor vermelha para o botão de excluir */
+        .btn-acao.btn-excluir {
+            --pico-color: var(--pico-del-color);
+            --pico-background-color: var(--pico-del-background);
+            --pico-border-color: var(--pico-del-border);
         }
     </style>
 </head>
