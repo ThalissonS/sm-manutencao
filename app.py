@@ -1,19 +1,17 @@
 import os
 import io
 from functools import wraps
+from datetime import date, datetime, timedelta 
 from flask import Flask, render_template, request, jsonify, send_file, Response, session, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer, String, Text, Float, Date, or_
-from datetime import date, datetime
 import pandas as pd
 
 # --- Configuração Inicial ---
 app = Flask(__name__)
-
-# Configura a chave secreta a partir das variáveis de ambiente
 app.secret_key = os.environ.get('SECRET_KEY', 'chave-padrao-para-teste-local-insegura')
-
+app.permanent_session_lifetime = timedelta(days=7)
 instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
 os.makedirs(instance_path, exist_ok=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "manutencoes.db")}'
@@ -66,27 +64,22 @@ def requires_auth(f):
 def login():
     if 'logged_in' in session:
         return redirect(url_for('index'))
-
     erro = None
     if request.method == 'POST':
         app_user = os.environ.get('APP_USER')
         app_password = os.environ.get('APP_PASSWORD')
-        
         if request.form['username'] == app_user and request.form['password'] == app_password:
             session['logged_in'] = True
-            session.permanent = True # Faz a sessão durar mais tempo
-            app.permanent_session_lifetime = timedelta(days=7) # Ex: sessão dura 7 dias
+            session.permanent = True
             return redirect(url_for('index'))
         else:
             erro = 'Usuário ou senha inválidos.'
-            
     return render_template('login.html', erro=erro)
 
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
-
 
 # --- Rotas da Aplicação ---
 @app.route('/')
@@ -106,9 +99,9 @@ def handle_manutencoes():
             termo_like = f"%{termo_busca}%"
             query = query.where(or_(Manutencao.serie_empacotadeira.ilike(termo_like), Manutencao.num_equipamento.ilike(termo_like), Manutencao.descricao.ilike(termo_like), Manutencao.solicitante.ilike(termo_like), Manutencao.responsavel.ilike(termo_like)))
         if data_inicio:
-            query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
+            query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%d-%m-%Y').date())
         if data_fim:
-            query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
+            query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%d-%m-%Y').date())
         query = query.order_by(Manutencao.data.desc())
         manutencoes = db.session.execute(query).scalars().all()
         return jsonify([m.to_dict() for m in manutencoes])
@@ -116,11 +109,49 @@ def handle_manutencoes():
         dados = request.get_json()
         if not dados or not all(k in dados for k in ['serie_empacotadeira', 'data', 'descricao', 'solicitante', 'responsavel', 'valor']):
             return jsonify({'erro': 'Dados incompletos ou formato inválido'}), 400
-        nova_manutencao = Manutencao(serie_empacotadeira=dados['serie_empacotadeira'], data=datetime.strptime(dados['data'], '%Y-%m-%d').date(), num_equipamento=dados.get('num_equipamento'), descricao=dados['descricao'], solicitante=dados['solicitante'], responsavel=dados['responsavel'], valor=float(dados['valor']))
+        nova_manutencao = Manutencao(serie_empacotadeira=dados['serie_empacotadeira'], data=datetime.strptime(dados['data'], '%d-%m-%Y').date(), num_equipamento=dados.get('num_equipamento'), descricao=dados['descricao'], solicitante=dados['solicitante'], responsavel=dados['responsavel'], valor=float(dados['valor']))
         db.session.add(nova_manutencao)
         db.session.commit()
         return jsonify(nova_manutencao.to_dict()), 201
     return jsonify({'erro': 'Método não permitido'}), 405
+
+# =======================================================
+# FUNÇÃO CORRIGIDA
+# =======================================================
+@app.route('/api/manutencao/<int:id>', methods=['GET', 'PUT', 'DELETE'])
+@requires_auth
+def handle_manutencao(id):
+    manutencao = db.session.get(Manutencao, id)
+    if not manutencao:
+        return jsonify({'erro': 'Registro não encontrado'}), 404
+
+    # MUDANÇA: Usamos if/elif para garantir que um dos blocos seja executado
+    if request.method == 'DELETE':
+        db.session.delete(manutencao)
+        db.session.commit()
+        return jsonify({'mensagem': 'Registro excluído com sucesso!'})
+
+    elif request.method == 'PUT':
+        dados = request.get_json()
+        if not dados:
+            return jsonify({'erro': 'Dados inválidos'}), 400
+        manutencao.serie_empacotadeira = dados.get('serie_empacotadeira', manutencao.serie_empacotadeira)
+        manutencao.data = datetime.strptime(dados.get('data'), '%d-%m-%Y').date() if dados.get('data') else manutencao.data
+        manutencao.num_equipamento = dados.get('num_equipamento', manutencao.num_equipamento)
+        manutencao.descricao = dados.get('descricao', manutencao.descricao)
+        manutencao.solicitante = dados.get('solicitante', manutencao.solicitante)
+        manutencao.responsavel = dados.get('responsavel', manutencao.responsavel)
+        manutencao.valor = float(dados.get('valor', manutencao.valor))
+        db.session.commit()
+        return jsonify(manutencao.to_dict())
+
+    elif request.method == 'GET':
+        dados_retorno = manutencao.to_dict()
+        dados_retorno['data_iso'] = manutencao.data.isoformat()
+        return jsonify(dados_retorno)
+    
+    # Este retorno de segurança nem seria necessário com a lógica if/elif, mas é uma boa prática
+    return jsonify({'erro': 'Método não suportado'}), 405
 
 @app.route('/api/exportar', methods=['GET'])
 @requires_auth
@@ -133,9 +164,9 @@ def exportar_excel():
         termo_like = f"%{termo_busca}%"
         query = query.where(or_(Manutencao.serie_empacotadeira.ilike(termo_like), Manutencao.num_equipamento.ilike(termo_like), Manutencao.descricao.ilike(termo_like), Manutencao.solicitante.ilike(termo_like), Manutencao.responsavel.ilike(termo_like)))
     if data_inicio:
-        query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%Y-%m-%d').date())
+        query = query.where(Manutencao.data >= datetime.strptime(data_inicio, '%d-%m-%Y').date())
     if data_fim:
-        query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%Y-%m-%d').date())
+        query = query.where(Manutencao.data <= datetime.strptime(data_fim, '%d-%m-%Y').date())
     query = query.order_by(Manutencao.data.asc())
     manutencoes = db.session.execute(query).scalars().all()
     if not manutencoes:
@@ -200,11 +231,6 @@ if __name__ == '__main__':
         os.environ['APP_PASSWORD'] = 'admin'
     if 'SECRET_KEY' not in os.environ:
         os.environ['SECRET_KEY'] = 'chave-super-secreta-para-ambiente-local'
-    
-    # Adicionando timedelta para a sessão permanente
-    from datetime import timedelta
-    app.permanent_session_lifetime = timedelta(days=7)
-    
     with app.app_context():
         db.create_all()
     app.run(debug=True, port=5001)
