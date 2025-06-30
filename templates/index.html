@@ -6,51 +6,25 @@
     <title>Controle de Manutenções</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
     <style>
-        .filtro-datas {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .footer-content {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 2rem 0;
-            opacity: 0.8;
-        }
-        .icon-linkedin {
-            width: 1.25rem;
-            height: 1.25rem;
-            fill: currentColor;
-            transition: opacity 0.2s ease-in-out;
-        }
-        svg.icon-linkedin { 
-            width: 1.25rem !important; 
-            height: 1.25rem !important; 
-        }
-        .icon-linkedin:hover {
-            opacity: 0.7;
-        }
-        .acoes-grid {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: center;
-        }
-        .btn-acao {
-            padding: 0.25rem;
-            width: 2.25rem;
-            font-size: 0.8rem;
-            line-height: 1;
-            margin: 0;
-        }
-        .btn-acao.secondary {
-            --pico-color: var(--pico-del-color);
-            --pico-background-color: var(--pico-del-background);
-            --pico-border-color: var(--pico-del-border);
-        }
+        body { --pico-form-element-spacing-vertical: 0.75rem; }
+        .grid-gerenciar { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: flex-end; }
+        .filtro-datas, .peca-linha { display: flex; align-items: center; gap: 1rem; }
+        .peca-linha { margin-bottom: 0.5rem; }
+        .peca-linha select { flex: 1; }
+        .peca-linha input[name="quantidade"] { max-width: 100px; }
+        .footer-content { display: flex; justify-content: center; align-items: center; gap: 0.5rem; padding: 2rem 0; opacity: 0.8; }
+        .icon-linkedin { width: 1.25rem; height: 1.25rem; fill: currentColor; transition: opacity 0.2s ease-in-out; }
+        svg.icon-linkedin { width: 1.25rem !important; height: 1.25rem !important; }
+        .icon-linkedin:hover { opacity: 0.7; }
+        .acoes-grid { display: flex; gap: 0.5rem; justify-content: center; }
+        .btn-acao { padding: 0.25rem; width: 2.25rem; font-size: 0.8rem; line-height: 1; margin: 0; }
+        .btn-acao.secondary { --pico-color: var(--pico-del-color); --pico-background-color: var(--pico-del-background); --pico-border-color: var(--pico-del-border); }
+        dialog { max-width: 800px; }
+        dialog article { padding: 1.5rem; }
+        dialog header { padding: 0 0 1rem 0; }
+        #tabela-corpo ul { margin: 0; padding-left: 1.2rem; list-style-type: '– '; text-align: left; }
+        #tabela-corpo ul li { font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -67,59 +41,56 @@
             <h2 id="form-title">Registrar Nova Manutenção</h2>
             <form id="form-manutencao">
                 <input type="hidden" id="edit-id" name="edit_id">
-                <div class="grid">
+                <div class="grid-gerenciar">
                     <div>
-                        <label for="serie_empacotadeira">Série da Empacotadeira</label>
-                        <select id="serie_empacotadeira" name="serie_empacotadeira" required>
-                            <option value="" disabled selected>Selecione a máquina</option>
-                            <option value="EMP-001">EMP-001</option>
-                            <option value="EMP-002">EMP-002</option>
-                        </select>
+                        <label for="maquina-select">Máquina</label>
+                        <select id="maquina-select" name="maquina_id" required></select>
                     </div>
-                    <div>
-                        <label for="data">Data do Serviço</label>
-                        <input type="date" id="data" name="data" required>
-                    </div>
+                    <button type="button" id="btn-gerenciar-maquinas">Gerenciar</button>
                 </div>
-                <label for="num_equipamento">N° do Equipamento (opcional)</label>
-                <input type="text" id="num_equipamento" name="num_equipamento" placeholder="Ex: MOTOR-A, SENSOR-B">
+                <label for="data">Data do Serviço</label>
+                <input type="date" id="data" name="data" required>
                 <label for="descricao">Descrição do Serviço Realizado</label>
                 <textarea id="descricao" name="descricao" required placeholder="Detalhe o que foi feito..."></textarea>
-                <div class="grid">
-                    <div>
-                        <label for="solicitante">Solicitante</label>
-                        <input type="text" id="solicitante" name="solicitante" required placeholder="Nome ou empresa">
+                
+                <fieldset>
+                    <legend>Peças Utilizadas</legend>
+                    <div id="pecas-container"></div>
+                    <div class="grid">
+                        <button type="button" id="btn-adicionar-peca" class="secondary outline" style="width: auto; padding: 0.5rem 1rem;">+ Adicionar Peça</button>
+                        <button type="button" id="btn-gerenciar-pecas" class="contrast outline" style="width: auto; padding: 0.5rem 1rem;">Gerenciar Catálogo de Peças</button>
                     </div>
+                </fieldset>
+                
+                <div class="grid-gerenciar">
                     <div>
-                        <label for="responsavel">Responsável pelo Serviço</label>
-                        <input type="text" id="responsavel" name="responsavel" required placeholder="Nome do técnico">
+                        <label for="solicitante-select">Solicitante</label>
+                        <select id="solicitante-select" name="solicitante_id" required></select>
                     </div>
+                     <button type="button" id="btn-gerenciar-solicitantes">Gerenciar</button>
                 </div>
-                <label for="valor">Valor (R$)</label>
+                <div class="grid-gerenciar">
+                    <div>
+                        <label for="responsavel-select">Responsável pelo Serviço</label>
+                        <select id="responsavel-select" name="responsavel_id" required></select>
+                    </div>
+                    <button type="button" id="btn-gerenciar-responsaveis">Gerenciar</button>
+                </div>
+
+                <label for="valor">Valor Total do Serviço (R$)</label>
                 <input type="number" id="valor" name="valor" step="0.01" required placeholder="Ex: 150.50">
                 <button type="submit" id="btn-salvar">Salvar Manutenção</button>
                 <button type="button" id="btn-cancelar" class="secondary outline" style="display: none;">Cancelar Edição</button>
             </form>
         </article>
-
-        <article>
-            <h2>Importar de Excel</h2>
-            <p>Para importar múltiplos registros de uma vez, baixe a planilha modelo, preencha com os dados e envie o arquivo abaixo.</p>
-            <a href="/api/template/download" role="button" class="outline">Baixar modelo de planilha</a>
-            <form id="form-importar" style="margin-top: 1rem;">
-                <label for="arquivo-excel">Selecione o arquivo Excel (.xlsx ou .xls)</label>
-                <input type="file" id="arquivo-excel" name="arquivo" accept=".xlsx, .xls" required>
-                <button type="submit">Importar Arquivo</button>
-            </form>
-        </article>
-
+        
         <article>
             <h2>Histórico de Registros</h2>
             <div id="filtros-acoes">
-                <div class="grid">
+                 <div class="grid">
                     <div>
                         <label for="filtro-termo">Buscar por termo</label>
-                        <input type="search" id="filtro-termo" name="termo" placeholder="Buscar por termo ou responsável...">
+                        <input type="search" id="filtro-termo" name="termo" placeholder="Buscar em qualquer campo...">
                     </div>
                     <div>
                         <label for="filtro-data-inicio">Filtrar por período</label>
@@ -135,39 +106,132 @@
                     <button id="btn-exportar" class="secondary">Exportar para Excel</button>
                 </div>
             </div>
-            
             <div class="overflow-auto">
                 <table>
                     <thead>
                         <tr>
                             <th>Máquina</th>
                             <th>Data</th>
-                            <th>N° Equip.</th>
                             <th>Descrição</th>
+                            <th>Peças Utilizadas</th>
                             <th>Solicitante</th>
                             <th>Responsável</th>
                             <th>Valor (R$)</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
-                    <tbody id="tabela-corpo">
-                    </tbody>
+                    <tbody id="tabela-corpo"></tbody>
                 </table>
             </div>
         </article>
+        
+        <dialog id="modal-maquinas">
+            <article>
+                <header>
+                    <button aria-label="Close" class="close" id="btn-fechar-modal-maquinas"></button>
+                    <h2>Gerenciar Máquinas</h2>
+                </header>
+                <p>Adicione, edite ou remova as máquinas do sistema.</p>
+                <form id="form-maquina">
+                    <input type="hidden" id="maquina-edit-id">
+                    <div class="grid">
+                        <div>
+                            <label for="maquina-nome">Nome da Máquina</label>
+                            <input type="text" id="maquina-nome" name="nome" placeholder="Ex: Empacotadeira Principal" required>
+                        </div>
+                        <div>
+                            <label for="maquina-serie">Número de Série</label>
+                            <input type="text" id="maquina-serie" name="serie" placeholder="Ex: EMP-001-XYZ" required>
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-salvar-maquina">Adicionar Máquina</button>
+                    <button type="button" class="secondary outline" id="btn-cancelar-maquina" style="display: none;">Cancelar Edição</button>
+                </form>
+                <div class="overflow-auto" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead><tr><th>Máquina</th><th>Série</th><th style="width: 30%;">Ações</th></tr></thead>
+                        <tbody id="tabela-maquinas"></tbody>
+                    </table>
+                </div>
+            </article>
+        </dialog>
+
+        <dialog id="modal-pecas">
+            <article>
+                <header>
+                    <button aria-label="Close" class="close" id="btn-fechar-modal-pecas"></button>
+                    <h2>Gerenciar Catálogo de Peças</h2>
+                </header>
+                <p>Adicione, edite ou remova peças do seu catálogo mestre.</p>
+                <form id="form-peca">
+                    <input type="hidden" id="peca-edit-id">
+                    <label for="peca-nome">Nome da Peça</label>
+                    <input type="text" id="peca-nome" name="nome" placeholder="Ex: Correia Dentada 5M" required>
+                    <button type="submit" id="btn-salvar-peca">Adicionar Peça</button>
+                    <button type="button" class="secondary outline" id="btn-cancelar-peca" style="display: none;">Cancelar Edição</button>
+                </form>
+                <div class="overflow-auto" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead><tr><th>Peça Cadastrada</th><th style="width: 30%;">Ações</th></tr></thead>
+                        <tbody id="tabela-pecas"></tbody>
+                    </table>
+                </div>
+            </article>
+        </dialog>
+
+        <dialog id="modal-solicitantes">
+            <article>
+                <header>
+                    <button aria-label="Close" class="close" id="btn-fechar-modal-solicitantes"></button>
+                    <h2>Gerenciar Solicitantes</h2>
+                </header>
+                <form id="form-solicitante">
+                    <input type="hidden" id="solicitante-edit-id">
+                    <label for="solicitante-nome">Nome do Solicitante</label>
+                    <input type="text" id="solicitante-nome" name="nome" required>
+                    <button type="submit" id="btn-salvar-solicitante">Adicionar Solicitante</button>
+                    <button type="button" class="secondary outline" id="btn-cancelar-solicitante" style="display: none;">Cancelar Edição</button>
+                </form>
+                <div class="overflow-auto" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead><tr><th>Nome Cadastrado</th><th style="width: 30%;">Ações</th></tr></thead>
+                        <tbody id="tabela-solicitantes"></tbody>
+                    </table>
+                </div>
+            </article>
+        </dialog>
+
+        <dialog id="modal-responsaveis">
+            <article>
+                <header>
+                    <button aria-label="Close" class="close" id="btn-fechar-modal-responsaveis"></button>
+                    <h2>Gerenciar Responsáveis</h2>
+                </header>
+                <form id="form-responsavel">
+                    <input type="hidden" id="responsavel-edit-id">
+                    <label for="responsavel-nome">Nome do Responsável</label>
+                    <input type="text" id="responsavel-nome" name="nome" required>
+                    <button type="submit" id="btn-salvar-responsavel">Adicionar Responsável</button>
+                    <button type="button" class="secondary outline" id="btn-cancelar-responsavel" style="display: none;">Cancelar Edição</button>
+                </form>
+                <div class="overflow-auto" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead><tr><th>Nome Cadastrado</th><th style="width: 30%;">Ações</th></tr></thead>
+                        <tbody id="tabela-responsaveis"></tbody>
+                    </table>
+                </div>
+            </article>
+        </dialog>
         
         <footer class="container">
             <div class="footer-content">
                 <small>Desenvolvido por Thalisson</small>
                 <a href="https://linkedin.com/in/thalissonpereira2003" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn de Thalisson Pereira" title="Conecte-se no LinkedIn">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon-linkedin">
-                        <path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.25 6.5 1.75 1.75 0 016.5 8.25zM19 19h-3v-4.75c0-1.4-1.2-2.5-2.5-2.5S11 12.85 11 14.25V19h-3v-9h2.9v1.3a3.11 3.11 0 012.6-1.5c2.5 0 4.5 2.2 4.5 5v4.2z"></path>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="icon-linkedin"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3zM6.5 8.25A1.75 1.75 0 118.25 6.5 1.75 1.75 0 016.5 8.25zM19 19h-3v-4.75c0-1.4-1.2-2.5-2.5-2.5S11 12.85 11 14.25V19h-3v-9h2.9v1.3a3.11 3.11 0 012.6-1.5c2.5 0 4.5 2.2 4.5 5v4.2z"></path></svg>
                 </a>
             </div>
         </footer>
     </main>
-
     <script src="/static/script.js"></script>
 </body>
 </html>
