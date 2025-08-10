@@ -12,9 +12,19 @@ import pandas as pd
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'chave-padrao-para-teste-local-insegura')
 app.permanent_session_lifetime = timedelta(days=7)
-instance_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance')
-os.makedirs(instance_path, exist_ok=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(instance_path, "manutencoes.db")}'
+
+# =======================================================================
+# MUDANÇA PRINCIPAL: LÓGICA DE CONEXÃO COM O BANCO DE DADOS
+# =======================================================================
+# Procura pela variável de ambiente DATABASE_URL. Se não achar, usa um SQLite local.
+database_url = os.environ.get('DATABASE_URL')
+if database_url:
+    # Pequeno ajuste para compatibilidade com o SQLAlchemy
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+# Se estivermos em produção (no Render), usará a URL do PostgreSQL.
+# Se estivermos localmente sem a URL configurada, usará um arquivo SQLite.
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url or f'sqlite:///{os.path.join(os.path.dirname(os.path.abspath(__file__)), "instance/local.db")}'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
